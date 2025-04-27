@@ -1,0 +1,8 @@
+torch
+tensorflow==2.13.0
+transformers[torch]
+typing-extensions==4.5.0
+datasets
+torch-directml
+discord
+pypresence
