@@ -9,8 +9,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 client_id = "1213032690425667614"  # Twój client_id z Discord Developer Portal
 folder_path = "learn-files"
-token=""
+token = "MTIxMzAzMjY5MDQyNTY2NzYxNA.GVJqik.Qz3o-NihESSzm0837kbUWj2v0bK5Pp1pPN-JD0"
 learn_mode_active = False
+talk_mode_active = False
 MAX_RECORDS = 1000
 number = 0
 with open("plik.txt", "r") as file:
@@ -30,8 +31,9 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 def create_csv_file(file_path):
-    df = pd.DataFrame(columns=["id", "message", "response"])  # Kolumny w pliku CSV
-    df.to_csv(file_path, index=False)
+    if not os.path.exists(file_path):
+        df = pd.DataFrame(columns=["id", "message", "response"])  # Kolumny w pliku CSV
+        df.to_csv(file_path, index=False)
 
 # Funkcja dodająca wiadomość do pliku CSV
 def add_message_to_csv(message, response):
@@ -91,14 +93,33 @@ def count_files_and_records(folder_path):
 @tree.command(name="ping", description="Replies with the bot's latency")
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message("Pong!")
+    
+@tree.command(name="math", description="Solve math problems")
+async def math(interaction: discord.Interaction, txt: str = ""):
+    try:
+        txt = eval(txt)
+    except Exception:
+        txt = ""
+    await interaction.response.send_message(txt)
 
 @tree.command(name="talkingon", description="Enables talking mode")
 async def talkingon(interaction: discord.Interaction):
-    await interaction.response.send_message("Talking mode has been enabled!")
+    global talk_mode_active
+    txt = "Talking mode has been enabled!"
+    if talk_mode_active:
+        txt = "Talking mode has been disabled!"
+        talk_mode_active = False
+    else:
+        talk_mode_active = True
+    await interaction.response.send_message(txt)
 
 @tree.command(name="learnmode", description="Activates learning mode")
 async def learnmode(interaction: discord.Interaction):
     global learn_mode_active
+    if learn_mode_active:
+        learn_mode_active = False
+    else:
+        learn_mode_active = True
     learn_mode_active = True
     files, records = count_files_and_records(folder_path)
     embed = discord.Embed(title="Info", description="Current information about collected data", color=0xff0000)
@@ -155,20 +176,21 @@ def generate_response(message):
 @client.event
 async def on_message(message):
     global learn_mode_active
+    global talk_mode_active
     if message.author.bot:
         return  # Ignorowanie wiadomości od bota
 
-    if learn_mode_active:
+    if talk_mode_active:
         # Dodanie wiadomości do pliku CSV
         response = generate_response(message.content)
+        if learn_mode_active:
+            add_message_to_csv(message.content,response)
 
-        add_message_to_csv(message.content,response)
-
-        # Sprawdzenie, czy trzeba przełączyć na nowy plik (jeśli liczba rekordów przekroczy MAX_RECORDS)
-        if get_record_count() >= MAX_RECORDS:
-            global current_file
-            current_file = f"{folder_path}/learn_data_{int(time.time())}.csv"  # Zmieniamy nazwę pliku
-            create_csv_file(current_file)
+            # Sprawdzenie, czy trzeba przełączyć na nowy plik (jeśli liczba rekordów przekroczy MAX_RECORDS)
+            if get_record_count() >= MAX_RECORDS:
+                global current_file
+                current_file = f"{folder_path}/learn_data_{int(time.time())}.csv"  # Zmieniamy nazwę pliku
+                create_csv_file(current_file)
         embed = discord.Embed(title="Response", description="", color=0xfff000)
         embed.set_author(
             name="Mateusz Błaszczyk - GitHub",
