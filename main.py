@@ -9,7 +9,6 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 client_id = "1213032690425667614"  # Twój client_id z Discord Developer Portal
 folder_path = "learn-files"
-token = ""
 learn_mode_active = False
 talk_mode_active = False
 MAX_RECORDS = 1000
